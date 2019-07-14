@@ -2,19 +2,25 @@
 
 ### 概念
 
-  数据库（database）  
-  集合（collection）
-  文档（document）
+数据库（database）
+
+集合（collection）
+
+文档（document）
 
 ### 启动
 
-  启动MongoDB服务
+sudo mongod
     
-    sudo mongod
+启动MongoDB服务
 
-  进入MongoDB终端
+mongo
 
-    mongo
+进入MongoDB终端
 
 ### 基本指令
+
+show dbs  
+show databases  
+  显示当前的所有数据库
 
