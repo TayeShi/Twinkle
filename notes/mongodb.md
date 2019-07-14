@@ -24,3 +24,22 @@ show dbs
 show databases  
   显示当前的所有数据库
 
+use 数据库名  
+  进入到指定的数据库中
+
+db
+  显示当前使用的数据库
+
+show collections
+  显示数据库中所有的集合
+
+### CRUD操作
+
+db.\<collection\>.insert(doc)  
+  向数据库中插入一个文档  
+  例子： db.test.insert({aaa:'aaa'})
+
+db.\<collection\>.find()
+  查询当前集合中的所有文档  
+  
+
