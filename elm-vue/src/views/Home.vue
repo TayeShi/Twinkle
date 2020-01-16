@@ -1,5 +1,5 @@
 <template>
-  <div class="Test">
+  <div class="home">
     <img alt="Vue logo" src="../assets/logo.png">
     <HelloWorld msg="Welcome to Your Vue.js App"/>
   </div>
@@ -10,18 +10,9 @@
 import HelloWorld from '@/components/HelloWorld.vue'
 
 export default {
-  name: 'Test',
+  name: 'home',
   components: {
     HelloWorld
-  },
-  methods: {
-    /**
-     * 提交计数
-     */
-    increment () {
-      store.commit('increment')
-    }
   }
 }
-
 </script>
