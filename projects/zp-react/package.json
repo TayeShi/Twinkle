@@ -38,6 +38,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "theme": {
+    "brand-primary": "red",
+    "color-text-base":  "#333"
   }
 }
-
