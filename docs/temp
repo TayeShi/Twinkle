@@ -1,0 +1,19 @@
+
+background
+
+background-repeat
+
+background-repeat: repeatRule || repeatRule1, repeatRule2, ...
+repeatRule: repeat(单值语法) || repeat repeat(双值语法)
+
+repeat    -> repeat repeat
+repeat-x  -> repeat no-repeat
+repeat-y  -> no-repeat repeat
+space     -> space space
+round     -> round round
+no-repeat -> no-repeat no-repeat
+
+repeat 按背景图设定的大小，重复，超出裁剪
+space 按背景图设定的大小，重复，适应外部div宽高，不会裁剪
+round 拉伸背景图大小，重复，适应外部div宽高，不会裁剪
+no-repeat 不重复
