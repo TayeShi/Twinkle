@@ -1,0 +1,16 @@
+{
+  "name": "tencent-cos-demo",
+  "version": "1.0.0",
+  "description": "腾讯对象存储",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "shitianye",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/router": "^9.3.1",
+    "cos-nodejs-sdk-v5": "^2.6.2",
+    "koa": "^2.13.0"
+  }
+}
