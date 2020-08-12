@@ -10,6 +10,14 @@ cd [app-name]
 yarn start
 ```
 
+## andt
+
+### 安装
+
+```shell
+yarn add antd
+```
+
 ## AAA
 
 组件的两种写法
