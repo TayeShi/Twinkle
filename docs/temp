@@ -1,6 +1,10 @@
 
 background
 
+background-size
+
+background-size: cover | contain | 值
+
 background-repeat
 
 background-repeat: repeatRule || repeatRule1, repeatRule2, ...

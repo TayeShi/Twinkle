@@ -8,4 +8,5 @@ module.exports = app => {
   router.get('/', controller.home.index);
 
   router.get('/cos/tencent/buckets/list', controller.cos.getService)
+  // /cos/tencent/object/update
 };
