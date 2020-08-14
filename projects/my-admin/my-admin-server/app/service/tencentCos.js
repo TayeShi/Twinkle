@@ -16,11 +16,15 @@ class TencentCosService extends Service {
    * 获取存储桶列表
    */
   async getService() {
-    this.cos.getService(function (err, data) {
-      console.log(data & data.Buckets)
-      console.log('data:', data)
-      console.log('data.buckets:', data.Buckets)
-      return true
+    return new Promise((resolve, reject) => {
+      this.cos.getService(function (err, data) {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(data.Buckets)
+        }
+      })
+
     })
   }
 

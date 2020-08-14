@@ -3,6 +3,10 @@ const cosConfig = {
   SecretId: 'SecretId',
   SecretKey: 'SecretKey'
 }
+const users = {
+  username: 'password'
+}
 module.exports = {
-  cosConfig
+  cosConfig,
+  users
 }

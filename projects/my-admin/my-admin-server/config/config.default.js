@@ -23,6 +23,24 @@ module.exports = appInfo => {
     // myAppName: 'egg',
   };
 
+  config.security = {
+    csrf: {
+      ignore: ctx => {
+        if (ctx.request.url == '/user/login') {
+          return true
+        } else {
+          return false
+        }
+      }
+    },
+    // domainWhiteList: [ 'http://localhost:3000' ]
+  }
+
+  config.cors = {
+    origin:'*',
+    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH'
+  }
+
   return {
     ...config,
     ...userConfig,

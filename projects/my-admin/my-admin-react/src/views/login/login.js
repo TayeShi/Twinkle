@@ -9,6 +9,8 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons'
 
 import { login, logout } from '../../redux/actions'
 
+import { myRequest } from '../../api/http-service'
+
 import './login.less'
 
 class Login extends Component {
@@ -31,15 +33,12 @@ class Login extends Component {
   onFinish = (values) => {
     let { username, password} = values
     console.log('Received values of form: ', values);
-    if (username === this.state.loginUsername && password === this.state.loginPassword) {
-      console.log('login success...')
-      // this.props.userLogin()
+    myRequest('login', { username, password}).then(result => {
+      console.log(result)
       this.props.login()
-      // console.log('do login...')
-      // this.props.history.replace('/home')
-    } else {
-      console.log('login fail...')
-    }
+    }).catch(err => {
+      console.log('err:', err)
+    })
   };
 
   render() {

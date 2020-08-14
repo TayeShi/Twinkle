@@ -8,8 +8,14 @@ class CosController extends Controller {
    */
   async getService() {
     const { ctx } = this
-    const ret = ctx.service.tencentCos.getService()
+    const ret = await ctx.service.tencentCos.getService()
     ctx.body = ret
+  }
+
+  async uploadObject() {
+    const { ctx } = this
+    console.log('uploadObject...')
+    console.log(ctx.request.body)
   }
 }
 
