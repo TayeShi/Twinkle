@@ -14,8 +14,9 @@ class UserController extends Controller {
     if (users[username]) {
       if (users[username] === password) {
         ret = { login: true }
-        const csrfStr = ctx.rotateCsrfSecret()
-        console.log('csrfStr:', csrfStr)
+        // ctx.rotateCsrfSecret()
+        // console.log('ctx:', ctx)
+        // console.log('csrfStr:', ctx.csrf)
       } else {
         ret = ctx.helper.BusinessException('密码错误')
       }

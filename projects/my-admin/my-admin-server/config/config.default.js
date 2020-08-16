@@ -24,16 +24,20 @@ module.exports = appInfo => {
   };
 
   config.security = {
+    // csrf: {
+    //   ignore: ctx => {
+    //     if (ctx.request.url == '/user/login') {
+    //       return true
+    //     } else {
+    //       return false
+    //     }
+    //   }
+    // },
+    // // domainWhiteList: [ 'http://localhost:3000' ]
     csrf: {
-      ignore: ctx => {
-        if (ctx.request.url == '/user/login') {
-          return true
-        } else {
-          return false
-        }
-      }
+      enable: false
     },
-    // domainWhiteList: [ 'http://localhost:3000' ]
+    // domainWhiteList:[ '*' ]
   }
 
   config.cors = {
