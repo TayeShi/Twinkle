@@ -25,20 +25,14 @@ module.exports = appInfo => {
 
   config.security = {
     csrf: {
-      ignore: ctx => {
-        if (ctx.request.url == '/user/login') {
-          return true
-        } else {
-          return false
-        }
-      }
+      enable: false,
     },
     // domainWhiteList: [ 'http://localhost:3000' ]
   }
 
   config.cors = {
-    origin:'*',
-    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH'
+    origin: '*',
+    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
   }
 
   return {
