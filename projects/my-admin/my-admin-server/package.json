@@ -10,7 +10,8 @@
     "cos-nodejs-sdk-v5": "^2.6.2",
     "egg": "^2.15.1",
     "egg-cors": "^2.2.3",
-    "egg-scripts": "^2.11.0"
+    "egg-scripts": "^2.11.0",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "autod": "^3.0.1",

@@ -1,12 +1,14 @@
+'use strict'
+
 // Tencent cos config
 const cosConfig = {
   SecretId: 'SecretId',
-  SecretKey: 'SecretKey'
+  SecretKey: 'SecretKey',
 }
 const users = {
-  username: 'password'
+  username: 'password',
 }
 module.exports = {
   cosConfig,
-  users
+  users,
 }

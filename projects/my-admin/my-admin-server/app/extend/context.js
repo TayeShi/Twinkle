@@ -1,13 +1,13 @@
-// app/extend/context.js
+'use strict'
 module.exports = {
   dataFormat(params) {
     if (params instanceof Error) { // error
-      // return { status: params.code, messsage: params.message }
+      console.log('return error...')
       this.body = { status: params.code, messsage: params.message }
     } else { // data
-      // return { status: 200, message: params.message, data: params.data }
+      console.log('return 200...')
       this.body = { status: 200, message: params.message, data: params.data }
     }
-  }
+  },
 
 };

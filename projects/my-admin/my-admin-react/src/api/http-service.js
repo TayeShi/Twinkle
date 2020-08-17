@@ -29,10 +29,10 @@ let myRequest = (apiName, data) => {
       ...reqeustOptions // 其他config
     }).then((result) => {
       console.log('axios:', result)
-      resolve(result)
+      resolve(result.data)
       return result
     }).catch((err) => {
-      console.log('err', err)
+      // console.log('err', err)
       // 业务错误
       if (err.response.status === 400) {
         resolve(err.response.data)

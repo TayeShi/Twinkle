@@ -5,7 +5,7 @@ import { LOGIN, LOGOUT } from './action-types'
 /**
  * login or logout
  */
-function login(state = false, action) {
+function login(state = sessionStorage.getItem('session_id') ? true: false, action) {
   switch (action.type) {
     case LOGIN:
       return true

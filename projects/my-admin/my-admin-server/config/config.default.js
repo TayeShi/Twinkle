@@ -35,14 +35,14 @@ module.exports = appInfo => {
     // },
     // // domainWhiteList: [ 'http://localhost:3000' ]
     csrf: {
-      enable: false
+      enable: false,
     },
     // domainWhiteList:[ '*' ]
   }
 
   config.cors = {
-    origin:'*',
-    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH'
+    origin: '*',
+    allowMethods: 'GET,HEAD,PUT,POST,DELETE,PATCH',
   }
 
   return {

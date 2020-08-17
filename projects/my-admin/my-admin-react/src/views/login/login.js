@@ -24,10 +24,6 @@ class Login extends Component {
 
   constructor(props) {
     super(props)
-    this.state = {
-      loginUsername: 'tayeshi',
-      loginPassword: '123456'
-    }
   }
 
   onFinish = (values) => {
@@ -35,7 +31,14 @@ class Login extends Component {
     console.log('Received values of form: ', values);
     myRequest('login', { username, password}).then(result => {
       console.log(result)
-      this.props.login()
+      if (result.status === 200) {
+        // console.log('cookie', document.cookie)
+        sessionStorage.setItem('session_id', result.session_id)
+        this.props.login()
+      } else {
+        console.log('login fail!')
+      }
+
     }).catch(err => {
       console.log('err:', err)
     })

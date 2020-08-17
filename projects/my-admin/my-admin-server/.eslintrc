@@ -1,3 +1,9 @@
 {
-  "extends": "eslint-config-egg"
+  "extends": "eslint-config-egg",
+  "rules": {
+    // 格式化不加分号
+    "semi": 0,
+    // 格式化为单引号
+    "singleQuote": true
+  }
 }
