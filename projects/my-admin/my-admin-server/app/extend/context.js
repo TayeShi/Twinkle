@@ -6,7 +6,7 @@ module.exports = {
       this.body = { status: params.code, messsage: params.message }
     } else { // data
       console.log('return 200...')
-      this.body = { status: 200, message: params.message, data: params.data }
+      this.body = { status: 200, message: 'success', data: params }
     }
   },
 
