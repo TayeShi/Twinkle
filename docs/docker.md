@@ -15,7 +15,7 @@ options:
 	--digests: 显示镜像的摘要信息
 	--no-trunc: 显示完整的镜像信息
 ```
-![docker-docker-images](docker.assets/docker-docker-images.png)
+![docker-docker-images](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/docker-docker-images.png)
 - REPOSITORY：镜像的仓库源
 - TAG：镜像的版本标签
 - IMAGE ID：镜像ID
@@ -160,7 +160,7 @@ docker cp 容器ID:容器内路径 目的主机路径
 
 #### 常用命令
 
-![command](docker.assets/docker-command.png)
+![command](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/docker-command.png)
 
 ```shell
 attach    Attach to a running container                 # 当前 shell 下 attach 连接指定运行镜像
@@ -201,3 +201,4 @@ unpause   Unpause a paused container                    # 取消暂停容器
 version   Show the docker version information           # 查看 docker 版本号
 wait      Block until a container stops, then print its exit code   # 截取容器停止时的退出状态值
 ```
+
