@@ -50,6 +50,12 @@ docker rmi -f 镜像名[:TAG] 镜像名2[:TAG]
 docker rmi -f ${docker images -qa}
 ```
 
+#### docker commit 提交容器副本使之成为一个新的镜像
+
+```shell
+docker commit -m="提交的描述信息" -a="作者" 容器ID 要创建的目标镜像名[:TAG名]
+```
+
 ### 容器命令
 
 #### docker run [options] IMAGE [command] [arg..] 新建并启动容器
@@ -202,3 +208,70 @@ version   Show the docker version information           # 查看 docker 版本�
 wait      Block until a container stops, then print its exit code   # 截取容器停止时的退出状态值
 ```
 
+### 容器数据卷
+
+将宿主机目录挂在到容器目录     容器间继承，共享数据，容器持久化
+
+#### 命令添加数据卷
+
+```shell
+docker run -it -v /宿主机绝对路径目录:/容器内目录 镜像名
+
+# 查看数据卷是否挂在成功
+docker inspect 容器ID
+
+# 带权限的命令
+docker run -it -v /宿主机绝对路径目录:/容器内目录:ro 镜像名
+```
+
+#### Dockerfile添加数据卷
+
+```shell
+# Dockerfile
+VOLUME["/dataVolumeContainer","/dataVolumeContainer2","/dataVolumeContainer3"]
+
+# Docker挂载主机目录Docker访问出现cannot open directory .: Permission denied
+# 解决办法：在挂载目录后多加一个--privileged=true参数即可
+```
+
+### Dockerfile
+
+编写Dockerfile文件 -> docker build -> docker run
+
+![docker-centos-Dockerfile](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/docker-centos-Dockerfile.png)
+
+1. 每条保留字指令都必须为大写字母且后面要跟随至少一个参数
+2. 指令按照从上到下，顺序执行
+3. #表示注释
+4. 每条指令都会创建一个新的镜像层，并对镜像进行提交
+
+Docker执行Dockerfile的大致流程：
+1. docker从基础镜像运行一个容器
+2. 执行一条指令并对容器作出修改
+3. 执行类似docker commit的操作提交一个新的镜像层
+4. docker再基于刚提交的镜像运行一个新容器
+5. 执行dockerfile中的下一条指令直到所有指令都执行完成
+
+#### Dockerfile体系结构（保留字指令）
+
+##### **`FROM`** 基础镜像，当前新镜像是基于哪个镜像的
+##### **`MAINTAINER`** 镜像维护者的姓名和邮箱地址
+##### **`RUN`** 容器构建时需要运行的命令
+##### **`EXPOSE`** 当前容器对外暴露出的端口
+##### **`WORKDIR`** 指定在创建容器后，终端默认登陆的进来工作目录，一个落脚点
+##### **`ENV`** 用来在构建镜像过程中设置环境变量 
+##### **`ADD`** 将宿主机目录下的文件拷贝进镜像且ADD命令会自动处理URL和解压tar压缩包
+##### **`COPY`** 类似ADD，拷贝文件和目录到镜像中。
+将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置
+- COPY src dest
+- COPY ["src", "dest"]
+##### **`VOLUME`** 容器数据卷，用于数据保存和持久化工作
+##### **`CMD`** 指定一个容器启动时要运行的命令
+`CMD`命令格式`RUN`相似，也是两种格式：
+- `shell`格式：`CMD <命令>`
+- `exec`格式：`CMD ["可执行文件","参数1","参数2"]`
+Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会被 docker run 之后的参数替换
+##### **`ENTRYPOINT `** 指定一个容器启动时要运行的命令， ENTRYPOINT 的目的和 CMD 一样，都是在指定容器启动程序及参数
+##### **`ONBUILD`** 当构建一个被继承的Dockerfile时运行命令，父镜像在被子继承后父镜像的onbuild被触发
+
+#### ![docker-command](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/docker-command.png)
