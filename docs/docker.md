@@ -73,6 +73,8 @@ options:
 		hostPort:containerPort # 常用重点
 		containerPort
 		
+	–restart=always : 随docker启动而启动
+		
 # 交互式容器 eg:
 docker run -it centos /bin/bash
 # 使用镜像centos:latest以交互式启动一个容器，并在容器内执行/bin/bash命令
@@ -275,3 +277,10 @@ Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会
 ##### **`ONBUILD`** 当构建一个被继承的Dockerfile时运行命令，父镜像在被子继承后父镜像的onbuild被触发
 
 #### ![docker-command](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/docker-command.png)
+
+
+### Demo
+
+#### redis
+
+
