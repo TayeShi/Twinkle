@@ -1,7 +1,5 @@
 'use strict';
 
-const { start } = require('egg');
-
 const Controller = require('egg').Controller
 
 class CosController extends Controller {
