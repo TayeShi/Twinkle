@@ -6,7 +6,7 @@
 
 环境bin /usr/local/bin
 
-Shitianye10.
+
 
 ### 更改hostname 
 
