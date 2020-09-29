@@ -147,8 +147,6 @@ SELECT <select_list> FROM tableA A FULL OUTER JOIN tableB B ON A.Key = B.Key WHE
 2. 经常增删改的表
 3. 数据重复且分布平均的表字段，建索引意义不大
 
-## 查询截取分析
-
 ### Explain
 
 ```mysql
@@ -375,12 +373,452 @@ insert into test03(c1, c2, c3, c4, c5) values ('d1','d2','d3','d4','d5');
 insert into test03(c1, c2, c3, c4, c5) values ('e1','e2','e3','e4','e5');
 
 select * from test03;
+
+CREATE INDEX idx_test03_c1234 on test03(c1, c2, c3, c4);
+
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1';
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2';
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c3 = 'a3';
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c3 = 'a3' AND c4 = 'a4';
+
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c3 = 'a3' AND c4 = 'a4'; # 使用了4个索引字段
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c4 = 'a4' AND c3 = 'a3'; # 使用了4个索引字段
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c3 > 'a3' AND c4 = 'a4'; # 使用了3个索引字段，c4没生效
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c4 > 'a4' AND c3 = 'a3'; # 使用了4个索引字段
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c4 = 'a4' ORDER BY c3;   # 使用了2个索引字段，c3用于排序
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' ORDER BY c3;                 # 同上
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' ORDER BY c4;   							# 使用了2个索引字段，c4没用于排序，出现filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c5 = 'a5' ORDER BY c2, c3;  						# 使用c1一个索引字段，c2、c3用于排序，没出现filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c5 = 'a5' ORDER BY c3, c2; 						# 使用c1一个索引字段，c3、c2没用于排序，出现filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' ORDER BY c2, c3;							# 使用2个索引字段，c2、c3用于排序，filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c5 = 'a5' ORDER BY c2, c3; # 使用2个索引字段，c2、c3用于排序，filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c2 = 'a2' AND c5 = 'a5' ORDER BY c3, c2; # 使用2个索引字段，c2、c3用于排序，无filesort，先在where中使用了索引字段c2(已经变为const)，所以后面 ORDER BY 的时候不会再出现filesort
+
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c5 = 'a5' GROUP BY c3, c2; # 使用索引字段c1，using filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c4 = 'a4' GROUP BY c2, c3; # 使用索引字段c1，没使用filesort
+EXPLAIN SELECT * FROM test03 WHERE c1 = 'a1' AND c4 = 'a4' GROUP BY c3, c2; # 使用索引字段c1 ， using temporary，using filesort
+```
+
+定值、范围、排序。一般order by是给个范围。group by 都要创建临时表
+
+> 对于单键索引，尽量选择针对当前query过滤性更好的索引
+> 在选择组合索引的时候，当前query中过滤性最好的字段在索引字段顺序中，位置越靠前越好。
+> 在选择组合索引的时候，尽量选择可以能够包含当前query中的where子句中更多字段的索引。
+> 尽可能通过分析统计信息和调整query的写法来达到选择合适索引的目的
+
+![image-20200926232655277](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200926232655277.png)
+
+![image-20200926232723790](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200926232723790.png)
+
+### 分析sql
+
+1. 观察，至少跑1天，看看生产的慢sql的情况
+2. 开启慢查询日志，设置阈值，比如超过5秒钟的就是慢sql，并将它抓取出来
+3. Explain + 慢sql分析
+4. show profile
+5. 运维经理 or DBA，进行sql数据库服务器的参数调优
+
+#### 总结
+
+1. 慢查询的开启并捕获
+
+2. explain + 慢sql分析
+
+3. show profile 查询sql在mysql服务器里面的执行细节和生命周期情况
+
+4. sql数据库服务器的参数调优
+
+## 查询截取分析
+
+### 查询优化
+
+#### 永远小表驱动大表
+
+类似嵌套循环Nested Loop
+优化原则：小表驱动大表，即小的数据集驱动大的数据集。
+
+```sql
+########## 原理 ##########
+
+select * from A where id in (select id from B)
+# 等价于：
+# for select id from B
+# for select * from A where A.id = B.id
+########## 当B表的数据集必须小于A表的数据集时，用in由于exist
+
+select * from A where exists (select 1 from B where B.id = A.id)
+# 等价于：
+# for select * from A
+# for select * from B where B.id = A.id
+########## 当A表的数据集小于B表的数据集时，用exists由于in
+
+## 注意： A表于B表的ID字段应建立索引
+```
+
+** exists **
+SELECT ... FROM table WHERE EXISTS (subquery)
+该语法可以理解为：将主查询的数据，放到子查询中做条件验证，根据验证结果（TRUE或FALSE）来决定主查询的数据结果是否得以保留
+** 提示 **
+1. EXISTS(subquery)只返回TRUE或FALSE，因此子查询中的SELECT * 也可以是SELECT 1 或 SELECT 'X'，官方说法是实际执行时会忽略SELECT清单，因此没有区别
+2. EXISTS子查询的实际执行过程可能经过了优化而不是我们理解上的逐条对比，如果担忧效率问题，可进行实际检验以确定是否有效率问题
+3. EXISTS 子查询往往也可以用条件表达式、其他子查询或者JOIN来代替，何种最优需要具体问题具体分析
+
+#### order by 关键字优化
+
+##### order by 子句，尽量使用Index方式排序，避免使用 filesort 方式排序
+
+![image-20200927001517268](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200927001517268.png)
+
+mysql 支持两种方式的排序：filesort 和 index。
+index效率高，它指mysql扫描索引本身完成排序。
+filesort效率低，全表扫描。
+
+order by 满足两种情况，会使用index方式排序：
+1. order by 语句使用索引最左前列
+2. 使用 where 子句与 order by 子句条件列组合满足索引最左前列
+
+##### 尽可能在索引列上完成排序操作，遵照索引建的最佳左前缀
+
+##### 如果不在索引列上，filesort 有两种算法：mysql就要启动双路排序和单路排序
+
+** 双路排序 **
+
+mysql 4.1 之前是使用双路排序，字面意思就是两次扫描磁盘，最终得到数据，读取行指针和orderby列，对他们进行排序，然后扫描已经排序号的列表，按照列表中的值重新从列表中读取对应的数据输出。
+从磁盘取排序字段，在buffer进行排序，再从磁盘取其他字段。
+
+** 取一批数据，要对磁盘进行了两次扫描，总所周知，I\O是很耗时的，所以在mysql4.1之后，出现了第二中改进的算法，就是单路排序 **
+
+** 单路排序 **
+
+从磁盘读取查询需要的所有列，按照order by列在buffer对他们进行排序，然后扫描排序后的列表进行输出，它的效率更快一些，避免了第二次读取数据。并且把随机IO变成了顺序IO，但是它会使用更多的空间，因为它把每一行都保存在内存中了。
+
+** 结论及引申出的问题 **
+
+由于单路是后出的，总体而言好于单路
+
+使用单路存在的问题：
+在sort_buffer中，方法B比方法A要多占用很多空间，因为方法B是把所有字段都取出，所以有可能取出的数据的总大小超出了sort_buffer的容量，导致每次只能取sort_buffer容量大小的数据，进行排序（创建tmp文件，多路合并），排完再取sort_buffer容量大小，再排...从而多次I\O
+本来想省一次I\O操作，反而导致了大量的I\O操作，反而得不偿失。
+
+##### 优化策略
+
+- 增大 sort_buffer_size 参数的设置
+- 增大 max_length_for_sort_data 参数的设置
+- Why：（提高order by的速度）
+	1. `order by` 时， `select *`是一个大忌，只query需要的字段，这点非常重要。这里的影响是：
+	   1. 当query的字段大小总和小于`max_length_for_sort_data`而且排序字段不是`TEXT|BLOB`类型时，会用改进后的算法--单路排序，否则用老算法--多路排序。
+	   2. 两种算法的数据都有可能超出`sort_buffer`的容量，超出之后，会创建tmp文件进行合并排序，导致多次I|O，但是用单路排序算法的风险会更大一些，所以要提高`sort_buffer_size`。
+	2. 尝试提高`sort_buffer_size`，不管用哪种算法，提高这个参数都会提高效率。当然，要根据系统的能力去提高，因为这个参数是针对每个进程的。
+	3. 尝试提高`max_length_for_sort_data`，提高这个参数，会增加用改进算法的概率。但是如果设的太高，数据总容量超出`sort_buffer_size`的概率就会增大，明显症状是高的磁盘I/O活动和低的处理器使用率。
+
+##### 小总结
+
+![image-20200927010320514](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200927010320514.png)
+
+#### group by 关键字优化
+
+group by 实质是先排序后进行分组，遵照索引建的最佳左前缀。
+当无法使用索引列，增大`max_length_for_sort_data`参数的设置 + 增大`sort_buffer_size`参数的设置。
+where 高于 having，能写在where限定的条件就不要去having限定了。
+
+### 慢查询日志
+
+#### 是什么
+
+- mysql的慢查询日志是mysql提供的一种日志记录，它用来记录在mysql中相应时间超过阀值的语句，具体指运行时间超过`long_query_time`值的sql，则会被记录到慢查询日志中。
+- 具体指运行时间超过`long_query_time`值的sql，则会被记录到慢查询日志中。`long_query_time`的默认值为10，意思是运行10秒以上的语句。
+- 有他来查看哪些sql超出了我们的最大忍耐时间值，比如一条sql执行超过5秒钟，我们就算慢sql，希望能收集超过5秒的sql，结合之前explain进行全面分析。
+
+#### 怎么玩
+
+##### 说明
+
+默认情况下，mysql数据库没有开启慢查询日志，需要我们手动来设置这个参数。
+
+当然，如果不是调优需要的话，一般不建议启动该参数，因为开启慢查询日志会或多或少带来一定的性能影响。慢查询日志支持将日志记录写入文件。
+
+##### 查看是否开启及如何开启
+
+默认 `SHOW VARIABLES LIKE '%slow_query_log%'`
+
+![image-20200927012236994](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200927012236994.png)
+
+开启 `set global show_query_log=1`
+使用 `set global show_query_log=1`开启了慢查询日志只对当前数据库生效，如果mysql重启后则会失效。![image-20200927012441661](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200927012441661.png)
+
+##### 开启了慢查询日志后，什么样的sql才会记录到慢查询日志里面
+
+![image-20200927012550093](/Users/taye/Library/Application Support/typora-user-images/image-20200927012550093.png)
+
+##### case:
+- 查看当前多少秒算慢： `SHOW VARIABLES LIKE 'long_query_time%'`；
+- 设置慢的阀值时间：`set global long_query_time=3`;
+- 为什么设置后看不出变化：需要重新连接或开一个会话才能看到修改值。 `SHOW VARIABLES LIKE 'long_query_time%'`；  `SHOW GLOBAL VARIABLES LIKE 'long_query_time'`；
+- 记录慢sql并后续分析 日志中查看
+- 查询当前系统中有多少条慢查询记录 `show global status like 'Slow_queries'`;
+
+##### 配置版
+
+```config
+[mysqld]
+slow_query_log=1;
+slow_query_log_file=/var/lib/mysql/xxxx.log;
+long_query_time=3;
+log_output=FILE;
+```
+
+#### 日志分析工具mysqldumpslow
+
+##### mysqldumpslow的帮助信息
+
+```shell
+mysqldumpslow -h;
+
+s: 表示按照何种方式排序
+c: 访问次数
+l: 锁定时间
+r: 返回记录
+t: 查询时间
+al: 平均锁时间
+ar: 平均返回记录数
+at: 平均查询时间
+t: 即为返回前面多少条的数据
+g: 后边搭配一个正则匹配模式，大小写不敏感的
+```
+
+##### 工作常用参考
+
+```
+得到返回记录集最多的10个sql
+mysqldumpslow -s r -t 10 /var/lib/mysql/xxx.log
+
+得到访问次数最多的10个sql
+mysqldumpslow -s c -t 10 /var/lib/mysql/xxx.log
+
+得到按照时间排序的前10条里面含有左连接的查询语句
+mysqldumpslow -s t -t 10 -g "left join" /var/lib/mysql/xxx.log
+
+另外建议在使用这些命令式结合 | 和 more 使用，否则有可能出现爆屏情况
+mysqldumpslow -s r -t 10 /var/lib/mysql/xxx.log | more
+```
+
+### 批量数据脚本
+
+往表里插入1000W数据
+
+#### 建表
+
+```sql
+# 新建库
+CREATE DATABASE bidData;
+use bigData;
+
+# 建表dept
+CREATE TABLE dept(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	deptno MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+	dname VARCHAR(20) NOT NULL DEFAULT "",
+	loc VARCHAR(13) NOT NULL DEFAULT "",
+) ENGINE=INNODB DEFAULT CHARSET=GBK;
+
+# 建表emp
+CREATE TABLE emp(
+	id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+	empno MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+	ename VARCHAR(20) NOT NULL DEFAULT "",
+	job VARCHAR(9) NOT NULL DEFAULT "",
+	mgr MEDIUMINT UNSIGNED NOT NULL DEFAULT 0, /* 上级编号 */
+	hiredate DATA NOT NULL,/*入职时间*/
+	sal DECIMAL(7,2) NOT NULL,/*薪水*/
+	comm DECIMAL(7,2) NOT NULL,/*红利*/
+	deptno MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 /*部门编号*/
+) ENGINE=INNODB DEFAULT CHARSET=GBK
+```
+
+#### 设置参数`log_bin_trust_function_creators`
+
+![image-20200927020219740](https://taye-1255887752.cos.ap-chengdu.myqcloud.com/markdown/image-20200927020219740.png)
+
+#### 创建函数，保证每条数据都不同
+
+随机产生字符串
+
+```sql
+# 用于随机产生字符串
+DELIMITER $$
+CREATE FUNCTION rand_string(n INT) RETURNS VARCHAR(255)
+BEGIN
+	DECLARE char_str VARCHAR(100) DEFAULT 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	DECLARE return_str VARCHAR(255) DEFAULT '';
+	DECLARE i INT DEFAULT 0;
+	WHILE i < n DO
+	SET return_str=CONCAT(return_str,SUBSTRING(chars_str,FLOOR(1+RAND()*52),1));
+	SET i=i+1;
+	END WHILE;
+	RETURN return_str;
+END $$
+
+# 假如要删除
+# drop function rand_str;
+```
+
+随机产生部门编号
+
+```sql
+# 用于随机产生部门号
+DELIMITER $$
+CREATE FUNCTION rand_num() RETURNS VARCHAR(5)
+BEGIN
+	DECLARE i INT DEFAULT 0;
+	SET i = FLOOR(100+RAND()*10);
+	RETURN i;
+END $$
+
+# 假如要删除
+# drop function rand_num;
+```
+
+#### 创建存储过程
+
+创建往emp表中插入数据的存储过程
+
+```sql
+DELIMITER $$
+CREATE PROCEDURE insert_emp(IN START INT(10), IN max_num INT(10)
+BEGIN
+	DECLARE i INT DEFAULT 0;
+  SET autocommit=0;
+	REPEAT
+	SET i = i+1;
+	INSERT INTO emp(empno, ename, ejob, mgr, hiredate, sal, comm, deptno) VALUE ((START+i), rand_string(6), 'SALESMAN', 0001, CURDATE(), 2000, 400, rand_num());
+	UNTIL i = max_num
+	END REPEAT;
+	COMMIT;
+END $$
+```
+
+创建往dept表中插入数据的存储过程
+
+```sql
+DELIMITER $$
+CREATE PROCEDURE insert_dept(IN START INT(10), IN max_num INT(10)
+BEGIN
+	DECLARE i INT DEFAULT 0;
+  SET autocommit=0;   
+	REPEAT
+	SET i = i+1;
+	INSERT INTO dept(deptno, dname, loc) VALUE ((START+i), rand_string(10), rand_string(8));
+	UNTIL i = max_num
+	END REPEAT;
+	COMMIT;
+END $$
 ```
 
 
 
+#### 调用存储过程
+
+dept
+
+```sql
+DELIMITER;
+CALL insert_dept(100, 10);
+```
+
+emp
+
+```sql
+DELIMITER;
+CALL insert_emp(100, 10);
+```
+
+### Show Profile
+
+**是什么**：是mysql提供可以用来分析当前会话中语句执行的资源消耗情况。可以用于sql的调优和测量
+默认情况下，参数处于关闭状态，并保存最近15次的运行结果
+
+```
+1.是否支持，看看当前的mysql版本是否支持
+Show variables like 'profiling';
+
+2.开启功能，默认是关闭，使用前需要开启
+set profiling=on;
+
+3.运行sql
+select * from emp group by id%10 limit 150000;
+select * from emp group by id%20 order by 5;
+
+4.查看结果，show profiles;
+
+5.诊断sql，show profile cpu, block io for query 上一步前面的问题sql数字号码；
+参数备注
+
+6.日常开发需要注意的结论
+
+```
+
+## mysql锁机制
+
+锁：读锁、写锁，表锁、行锁
+
+三锁： 行锁、表锁、页锁
+
+```mysql
+# 数据准备
+CREATE TABLE `lock1`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `lock2`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+);
+
+INSERT INTO lock1 (id, name) VALUES (1, 'a');
+INSERT INTO lock1 (id, name) VALUES (2, 'b');
+INSERT INTO lock1 (id, name) VALUES (3, 'c');
+INSERT INTO lock1 (id, name) VALUES (4, 'd');
+
+INSERT INTO lock2 (id, name) VALUES (1, 'a');
+INSERT INTO lock2 (id, name) VALUES (2, 'b');
+INSERT INTO lock2 (id, name) VALUES (3, 'c');
+INSERT INTO lock2 (id, name) VALUES (4, 'd');
+
+show open tables; # 查看锁表
+```
+
+```mysql
+# 读锁例子
+# session1
+LOCK TABLE lock1 read; 	# session1, 执行加锁lock1表
+SHOW OPEN TABLES; 			# 查看锁表情况，lock1表被锁
+SELECT * FROM lock1;		# session1, 查看lock1表记录,可以查看
+# session2
+SELECT * FROM lock1;		# session2, 查看lock1表记录，可以查看
+# session1
+SELECT * FROM lock2;		# session1, 查看lock2表记录，不可以查看
+# session2
+SELECT * FROM lock2;		# session2, 查看lock2表记录，可以查看
+# sessson1
+UPDATE lock1 set name = 'a1' WHERE id = 1; # session1, 不可以更改lock1表记录
+# session2
+UPDATE lock1 set name = 'a1' WHERE id = 1; # session2，更改记录被阻塞
+# session1
+UNLOCK tables; # session1, 执行解锁, session2执行更改操作
+
+# 思考
+# 当session1对lock1加读锁，session2是否能对lock1加读锁？
+# 操作结果，session1对lock1加读锁后，session2可以继续对lock1加读锁。当session1解开对lock1的读锁后，更改其中某条数据，该操作被阻塞。session2解开对lock1的读锁后，session1的更改操作执行。
+
+
+
+```
 
 
 主从复制
 
-mysql锁机制
+
+
