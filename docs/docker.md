@@ -2,6 +2,18 @@
 
 ## install
 
+```shell
+# 一键安装
+curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+# or
+curl -sSL https://get.daocloud.io/docker | sh
+
+# 启动docker
+sudo systemctl start docker
+```
+
+
+
 ## 命令
 
 ### 镜像命令
@@ -32,7 +44,7 @@ options:
 	--automated: 只列出automated build类型的镜像
 ```
 
-#### docker pull XXX 拉去镜像
+#### docker pull XXX 取镜像
 
 ```shell
 docker pull XXX
@@ -281,6 +293,37 @@ Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会
 
 ### Demo
 
+#### mysql
+
+```shell
+docker pull mysql
+# 启动并设置密码
+docker run -itd --name mysql-test -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
+#启动
+docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456! -d mysql
+
+#进入容器
+docker exec -it mysql bash
+
+#登录mysql
+mysql -u root -p
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'Lzslov123!';
+
+```
+
 #### redis
 
+```shell
+docker pull redis
+
+docker run -itd --name redis -p 6379:6379 redis
+
+docker run --name myredis -p 6379:6379 -d --restart=always redis:latest redis-server --appendonly yes --requirepass "root123456"
+# -p 6379:6379 :将容器内端口映射到宿主机端口(右边映射到左边)
+# redis-server –appendonly yes : 在容器执行redis-server启动命令，并打开redis持久化配置
+# requirepass “your passwd” :设置认证密码
+# –restart=always : 随docker启动而启动
+
+
+```
 

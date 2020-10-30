@@ -137,8 +137,8 @@ yum -y install make zlib zlib-devel gcc-c++ libtool  openssl openssl-devel
 ```shell
 cd /usr/local/src/
 wget https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz
-tar zxvf pcre-8.35.tar.gz
-cd pcre-8.35
+tar zxvf pcre-8.44.tar.gz
+cd pcre-8.44
 # 编译安装
 ./configure
 make && make install
