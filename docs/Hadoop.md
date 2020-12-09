@@ -173,15 +173,15 @@ bin/hdfs dfs -cat /user/hadoop/output/p*
 {hadoop}/logs目录下
 ```
 
+###### 启动yarn并运行MapReduce程序
 
+**配置文件**
 
 ```shell
-启动yarn 并运行MapReduce程序
-
-配置yarn-env.sh
+# yarn-env.sh
 JAVA_HOME=''
-yarn-site.xml
 
+# yarn-site.xml
 <!-- Reducer获取数据的方式 -->
 <property>
 	<name>yarn.nodemanager.aux-services</name>
@@ -194,43 +194,47 @@ yarn-site.xml
 	<value>hadoop101</value>
 </property>
 
-mapred-env.sh
+# mapred-env.sh
 JAVA_HOME=''
-mapred-site.xml.template -> mapred-site.xml
 
+# mapred-site.xml.template -> mapred-site.xml
 <!-- 指定MR运行在YARN上 -->
 <property>
 	<name>mapreduce.framework.name</name>
 	<value>yarn</value>
 </property>
+```
 
-启动 启动前必须保证NameNode和DataNode已经启动
-启动ResourceManager
+** 注意 **
+```shell
+# 启动 启动前必须保证NameNode和DataNode已经启动 (hdfs)
+# 1.启动ResourceManager
 sbin/yarn-daemon.sh start resourcemanager
-启动NodeManager
+# 2.启动NodeManager
 sbin/yarn-daemon.sh start nodemanager
 
-http://hadoop101:8088/cluster
+# http://hadoop101:8088/cluster
 
-启动任务
+# 启动任务
 bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.0.jar wordcount /user/hadoop/input /user/hadoop/output
-则在8088上可以看见任务信息
+# 则在8088上可以看见任务信息
 
+```
 
+**错误处理**
 
-
-# 错误处理
-yarn执行MapReduce任务时，找不到主类导致的
- 错误: 找不到或无法加载主类 org.apache.hadoop.mapreduce.v2.app.MRAppMaster
+```shell
+# yarn执行MapReduce任务时，找不到主类导致的
+# 错误: 找不到或无法加载主类 org.apache.hadoop.mapreduce.v2.app.MRAppMaster
  
- hadoop classpath 获取到内容
- 复制，填写到yarn-site.xml
+ hadoop classpath # 获取到内容
+ # 复制，填写到yarn-site.xml
  <property>
         <name>yarn.application.classpath</name>
         <value>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</value>
 </property>
 
-重启
+# 重启
 yarn --daemon stop resourcemanager
 yarn --daemon stop nodemanager
 
@@ -239,10 +243,12 @@ yarn --daemon start nodemanager
 
 ```
 
-```shell
-配置历史服务器
+###### 配置历史服务器
 
-mapred-site.xml
+**配置**
+
+```shell
+# mapred-site.xml
 <!-- 历史服务器端地址 -->
 <property>
 	<name>mapreduce.jobhistory.address</name>
@@ -253,22 +259,28 @@ mapred-site.xml
 	<name>mapreduce.jobhistory.webapp.address</name>
 	<value>hadoop101:19888</value>
 </property>
+```
 
+**启动**
+
+```shell
 启动历史服务器
 sbin/mr-jobhistory-daemon.sh start historyserver
 
 jps
 ```
 
-```shell
-配置日的志聚集
+###### 配置日的志聚集
 
 日志聚集的概念：应用运行完成以后，将程序运行日志信息上传到HSFS系统上
 日志聚集的好处：可以方便地查看到程序性运行详情，方便开发调试
 
-# 开启日志聚集功能，需要重新启动NodeManager，ResourceManager，HistoryManager
+开启日志聚集功能，需要重新启动NodeManager，ResourceManager，HistoryManager
 
-配置yarn-site.xml
+**配置**
+
+```shell
+# 配置yarn-site.xml
 <!-- 日志聚集功能使能 -->
 <property>
 	<name>yarn.log-aggregation-enable</name>
@@ -279,21 +291,25 @@ jps
 	<name>yarn.log-aggregation.retain-seconds</name>
 	<value>604800</value>
 </property>
+```
 
-关闭 NodeManager，ResourceManager，HistoryManager
+**启动**
+
+```shell
+# 关闭 NodeManager，ResourceManager，HistoryManager
 sbin/yarn-daemon.sh stop resourcemanager
 sbin/yarn-daemon.sh stop nodemanager
 sbin/mr-jobhistory-daemon.sh stop historyserver
 
-启动 NodeManager，ResourceManager，HistoryManager
+# 启动 NodeManager，ResourceManager，HistoryManager
 sbin/yarn-daemon.sh start resourcemanager
 sbin/yarn-daemon.sh start nodemanager
 sbin/mr-jobhistory-daemon.sh start historyserver
 
-删除再重新运行，再8088到history查看MapReduce的logs
+# 删除再重新运行，再8088到history查看MapReduce的logs
 ```
 
-配置文件说明
+###### 配置文件说明
 
 Hadoop配置文件分为两类：默认配置文件和自定义配置文件，想修改某一默认配置值时，修改自定义配置文件即可。
 
@@ -310,33 +326,37 @@ Hadoop配置文件分为两类：默认配置文件和自定义配置文件，�
 
 
 
-///--------------------------------------- 完全分布式 ！！！
+##### 完全分布式（重点)
 
-1.环境准备
+###### 环境准备
 
-2.编写集群分发脚本xsync
+hadoop102 hadoop103 hadoop104
 
-2.1. scp拷贝hadoop环境到其他服务器
+###### 编写集群分发脚本xsync
+
+**scp拷贝hadoop环境到其他服务器***
 
 scp(secure copy) 安全拷贝
 scp 可以从其他计算机上拷贝到本机，也可以从本机拷贝到其他计算机
 scp -r [from] [to]
 用户名@主机名:拷贝到的路径/名称
 
-2.2. 编写集群分发脚本xsync
+###### 编写集群分发脚本xsync
 
+**rsync**
 rsync 远程同步工具，主要用于备份和镜像。具有速度快、避免复制相同内容和支持符号链接的优点
 rsync 和 scp 的区别：用rsync做文件的复制要比scp的速度快，rsync只对差异文件做更新。scp是把所有文件都复制过去。
 
 基本语法：
 rsync [选项参数] [要拷贝的文件路径/名称] [目的用户@主机名:目的路径/名称]
 选项参数：
+
 - -r 递归
 - -v 显示复制过程
 - -l 拷贝符号连接
 example: rsync -rvl /opt/software root@hadoop102:/opt/software
 
-2.3 xsync 集群分发脚本
+**xsync 集群分发脚本**
 
 期望效果: xsync 要同步的文件或文件夹名称
 在/home/$username/bin下的脚本 $username用户在系统任何地方都可以直接执行
@@ -376,113 +396,116 @@ done
 # xsync /home/hadoop/bin
 ```
 
-3.集群配置
+###### 集群配置
 
-3.1 集群部署规划
+1. 集群部署规划
 
 |      |       hadoop102        |            hadoop103             |            hadoop104            |
 | :--: | :--------------------: | :------------------------------: | :-----------------------------: |
 | HDFS | NameNode<br />DataNode |             DataNode             | SecondaryNameNode<br />DataNode |
 | YARN |      NodeManager       | ResourceManager<br />NodeManager |           NodeManager           |
 
-3.2 配置
+2. 配置
 
-3.2.1 core配置
+	1. core配置
 
-core-site.xml
+        **core-site.xml**
 
-```xml
-<!-- 指定HDFS中NameNode的地址 -->
-<property>
-	<name>fs.defaultFS</name>
-    <value>hdfs://hadoop102:9000</value>
-</property>
-<!-- 指定Hadoop运行时产生文件的存储目录 -->
-<property>
-	<name>hadoop.tmp.dir</name>
-    <value>/opt/module/hadoop-3.0.0/data/tmp</value>
-</property>
-```
+        ```xml
+        <!-- 指定HDFS中NameNode的地址 -->
+        <property>
+            <name>fs.defaultFS</name>
+            <value>hdfs://hadoop102:9000</value>
+        </property>
+        <!-- 指定Hadoop运行时产生文件的存储目录 -->
+        <property>
+            <name>hadoop.tmp.dir</name>
+            <value>/opt/module/hadoop-3.0.0/data/tmp</value>
+        </property>
+        ```
 
-3.2.2 HDFS配置
+	2. HDFS配置
 
-hadoop-env.sh
+		**hadoop-env.sh**
+
+        ```shell
+        export JAVA_HOME=/opt/module/jdk...
+        ```
+
+        **hdfs-site.sh**
+
+        ```xml
+        <property>
+            <name>dfs.replication</name>
+            <value>3</value>
+        </property>
+        <!-- 指定Hadoop辅助名称节点主机配置 -->
+        <property>
+            <name>dfs.namenode.secondary.http-address</name>
+            <value>hadoop104:50090</value>
+        </property>
+        ```
+
+	3. YARN配置
+
+        **yarn-env.sh**
+
+        ```shell
+        export JAVA_HOME=/opt/module/jdk...
+        ```
+
+        **yarn-site.xml**
+
+        ```xml
+        <!-- Reducer获取数据的方式 -->
+        <property>
+            <name>yarn.nodemanager.aux-services</name>
+            <value>mapreduce_shuffle</value>
+        </property>
+        <!-- 指定YARN的ResourceManager的地址 -->
+        <property>
+            <name>yarn.resourcemanager.hostname</name>
+            <value>hadoop103</value>
+        </property>
+        ```
+
+	4. MapReduce配置
+
+        **mapred-env.sh**
+
+        ```shell
+        export JAVA_HOME=/opt/module/jdk...
+        ```
+
+        **mapred-site.xml**
+
+        ```xml
+        <property>
+            <name>mapreduce.framework.name</name>
+            <value>yarn</value>
+        </property>
+        ```
+
+3. 分发以上配置到 103 104
+
+    ```shell
+    xsync  /opt/module/hadoop-3.3.0/
+    ```
+4. 验证分发情况
+
+###### 集群单节点启动
 
 ```shell
-export JAVA_HOME=/opt/module/jdk...
-```
+# 删除所有节点 $hadoop 下的 data/ logs/
 
-hdfs-site.sh
-
-```xml
-<property>
-	<name>dfs.replication</name>
-	<value>3</value>
-</property>
-<!-- 指定Hadoop辅助名称节点主机配置 -->
-<property>
-	<name>dfs.namenode.secondary.http-address</name>
-    <value>hadoop104:50090</value>
-</property>
-```
-
-3.2.3 YARN配置
-
-yarn-env.sh
-
-```shell
-export JAVA_HOME=/opt/module/jdk...
-```
-
-yarn-site.xml
-
-```xml
-<!-- Reducer获取数据的方式 -->
-<property>
-	<name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle</value>
-</property>
-<!-- 指定YARN的ResourceManager的地址 -->
-<property>
-	<name>yarn.resourcemanager.hostname</name>
-    <value>hadoop103</value>
-</property>
-```
-
-3.2.4 MapReduce配置
-
-mapred-env.sh
-
-```shell
-export JAVA_HOME=/opt/module/jdk...
-```
-
-mapred-site.xml
-
-```xml
-<property>
-	<name>mapreduce.framework.name</name>
-    <value>yarn</value>
-</property>
-```
-
-3.3 分发以上配置到 103 104
-
-xsync  /opt/module/hadoop-3.3.0/
-
-3.4 验证分发情况
-
-4.集群单节点启动
-
-删除所有节点 $hadoop 下的 data/ logs/
-
-hadoop102 
+# hadoop102 
 bin/hdfs namenode -format
 sbin/hadoop-daemon.sh start namenode
 sbin/hadoop-daemon.sh start datanode
 
-hadoop103
+# hadoop103
 sbin/hadoop-daemon.sh start datanode
 
-hadoop104
+# hadoop104
 sbin/hadoop-daemon.sh start datanode
+```
