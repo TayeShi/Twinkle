@@ -153,7 +153,8 @@ cd /usr/local/src
 wget http://nginx.org/download/nginx-1.18.0.tar.gz
 tar zxvf nginx-1.18.0.tar.gz
 cd nginx-1.18.0
-./configure
+./configure 
+# or Nginx开启SSL模块 ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module
 make && make install
 ```
 编译后，/usr/local下会出现nginx目录  sbin目录下有脚本
