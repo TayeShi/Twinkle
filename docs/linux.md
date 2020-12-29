@@ -118,6 +118,11 @@ npm install xxx --registry https://registry.npm.taobao.org
 npm config set registry https://registry.npm.taobao.org
 # 查看当前源
 npm config get registry
+
+
+#nvm
+nvm node_mirror http://npm.taobao.org/mirrors/node/ # 注意结尾有斜杠
+nvm npm_mirror https://npm.taobao.org/mirrors/npm/
 ```
 
 
