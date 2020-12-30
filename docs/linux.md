@@ -118,6 +118,11 @@ npm install xxx --registry https://registry.npm.taobao.org
 npm config set registry https://registry.npm.taobao.org
 # 查看当前源
 npm config get registry
+
+
+#nvm
+nvm node_mirror http://npm.taobao.org/mirrors/node/ # 注意结尾有斜杠
+nvm npm_mirror https://npm.taobao.org/mirrors/npm/
 ```
 
 
@@ -153,7 +158,8 @@ cd /usr/local/src
 wget http://nginx.org/download/nginx-1.18.0.tar.gz
 tar zxvf nginx-1.18.0.tar.gz
 cd nginx-1.18.0
-./configure
+./configure 
+# or Nginx开启SSL模块 ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module
 make && make install
 ```
 编译后，/usr/local下会出现nginx目录  sbin目录下有脚本
