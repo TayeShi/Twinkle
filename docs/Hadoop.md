@@ -18,7 +18,7 @@
    ```
 
    ```shell
-   vim /etc/host
+   vim /etc/hosts
    
    192.168.100.101 hadoop101
    192.168.100.102 hadoop102
@@ -432,7 +432,7 @@ done
         export JAVA_HOME=/opt/module/jdk...
         ```
 
-        **hdfs-site.sh**
+        **hdfs-site.xml**
 
         ```xml
         <property>
@@ -442,7 +442,7 @@ done
         <!-- 指定Hadoop辅助名称节点主机配置 -->
         <property>
             <name>dfs.namenode.secondary.http-address</name>
-            <value>hadoop104:50090</value>
+            <value>hadoop104:9870</value>
         </property>
         ```
 
@@ -508,4 +508,202 @@ sbin/hadoop-daemon.sh start datanode
 
 # hadoop104
 sbin/hadoop-daemon.sh start datanode
+```
+
+###### ssh无密登录
+
+eg: hadoop用户
+在/home/hadoop文件夹下 `ls -al`
+存在一个**.ssh**文件夹
+记录了和ssh相关的内容
+
+1. 生成密匙
+	```shell
+	ssh-keygen -t rsa
+	# 生成
+	*/.ssh/id_rsa		# 私匙
+	*/.ssh/id_rsa.pub	# 公匙
+	```
+2. 发送密匙
+	```shell
+	ssh-copy-id (hostname)	# 将公匙发送给其他服务器
+	# 其他服务器上 */.ssh/authorized_keys 保存了公匙
+	```
+	
+
+操作:
+
+1. ***hadoop用户***在**hadoop102**上生成**rsa**发送给**hadoop102**、**hadoop103**、**hadoop104** -- NameNode
+2. ***hadoop用户***在**hadoop103**上生成**rsa**发送给**hadoop102**、**hadoop103**、**hadoop104** -- ResourceManager
+3. ***root用户***在**hadoop102**上生成**rsa**发送给**hadoop102**、**hadoop103**、**hadoop104**
+
+.ssh文件夹下的文件
+
+|      file       |                                       |
+| :-------------: | :-----------------------------------: |
+|   know_hosts    | 记录ssh访问过计算机的公匙(public_key) |
+|     id_rsa      |            本机生成的私匙             |
+|   id_rsa.pub    |            本机生成的公匙             |
+| authorized_keys |    存放授权过的无密登录服务器公匙     |
+
+###### 群起集群
+
+1. 更改配置文件
+配置群起文件`*/hadoopdir/etc/hadoop`目录下
+hadoop3以后的版本文件为`workers`, 之前的为`slaves`
+增加所有服务的名字
+2. 分发配置文件
+```shell
+xsync slaves
+```
+3. 启动集群
+
+操作:
+```shell
+# vim slaves / workers
+hadoop102
+hadoop103
+hadoop104
+
+# xsync   /opt/module/hadoop-3.3.0/etc/hadoop
+xsync workers # xsync slaves
+
+# 启动集群
+# hadoop102 namenode
+bin/hdfs namenode -format
+hadoop/sbin/start-dfs.sh
+# hadoop103 ResourceManager
+hadoop/sbin/start-yarn.sh
+```
+
+可能出现的错误：
+1. hadoop102、hadoop103对外的ssh没有通
+2. 对应的dfs、yarn脚本在其他服务器上启动的
+3. namenode没有格式化
+
+else:
+
+文件存储方式，对应的Availability、block
+
+###### 集群启动/停止方式
+
+1. 各个服务组件逐一启动/停止
+
+   1. 分别启动/停止HDFS组件
+
+      hadoop-daemon.sh start/stop   namenode/datanode/secondarynamenode
+
+   2. 启动/停止yarn
+      yarn-daemon.sh start/stop   resourcemanager/nodemanager
+2. 各个模块分开启动/停止 (配置ssh是前提)
+   1. 整体启动/停止HDFS
+      start-dfs.sh / stop-dfs.sh
+   2. 整体启动/停止YARN
+      start-yarn.sh / stop-yarn.sh
+
+###### crondtab 定时任务调度
+
+crontab定时任务设置
+
+语法: 
+`crontab [选项]`
+选项:
+- `-e` 编辑crontab定时任务
+- `-l` 查询crontab任务
+- `-r` 删除当前用户的所有crontab任务
+特殊符号:
+- `*`  代表任何时间。比如第一个*就代表一小时中每分钟都执行一次。
+- `,`  代表不连续的时间。比如"0 8,12,16 * * *"，代表在每天的8点0分，12点0分，16点0分都执行一次命令。
+- `-`  代表连续的时间范围。比如"0 5 * * 1-6"，代表在周一到周六的每天5点0分执行命令。
+- `*/n`  代表每个多久执行一次。比如"*/10 * * * *"，代表每隔10分钟就执行一次命令。
+
+案例:实现每隔1分钟向/home/aaa.txt 文件添加一个数字
+```shell
+*/1 * * * * /bin/echo "10" >> /home/aaa.txt
+
+systemctl restart crond # 重启crondtab
+
+tail -f /home/aaa.txt # 查看文件的实时更新
+```
+
+###### 集群时间同步
+
+***时间主机***
+
+1. 检查ntp是否安装
+
+```shell
+rpm -qa | grep ntp
+yum install ntpdate ntp -y
+​```shell
+
+2. 修改ntp配置文件
+
+​```shell
+vim /etc/ntp.conf
+
+# 修改1（授权可以从这台机器上查询和同步时间的网段）
+
+# restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
+# 改为
+restrict 192.168.1.0 mask 255.255.255.0 nomodify notrap
+
+# 修改2（集群在局域网中，不适用其他互联网上的时间）
+server 0.centos.pool.ntp.org iburst
+server 1.centos.pool.ntp.org iburst
+server 2.centos.pool.ntp.org iburst
+server 3.centos.pool.ntp.org iburst
+# 改为
+# server 0.centos.pool.ntp.org iburst
+# server 1.centos.pool.ntp.org iburst
+# server 2.centos.pool.ntp.org iburst
+# server 3.centos.pool.ntp.org iburst
+
+# 添加3（当该节点丢失网络连接，依然可以采用本地时间作为时间服务器为集群中的其他节点提供时间同步）
+sever 127.127.1.0
+fudge 127.127.1.0 stratum 10
+```
+
+3. 修改/etc/sysconfig/ntpd文件
+让硬件时间与系统时间一起同步
+
+```shell
+vim /etc/sysconfig/ntpd
+# 增加内容如下（让硬件时间与系统时间一起同步）
+SYNC_HWCLOCK=yes
+```
+
+4. 重启ntpd服务
+
+```shell
+systemctl status ntpd
+systemctl restart ntpd
+```
+
+5. 设置ntpd服务开机启动
+
+```shell
+chkconfig ntpd on
+```
+
+***其他主机***
+
+1. 在其他机器配置10分钟与服务器同步一次
+
+```shell
+crontab -e
+
+*/10 * * * * /usr/sbin/ntpdate hadoop102
+```
+
+2. 修改任意机器时间
+
+```shell
+date -s "2018-8-8 11:11:11"
+```
+
+3. 十分钟后查看机器是否与时间服务器同步
+
+```shell
+date
 ```
