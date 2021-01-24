@@ -1,5 +1,22 @@
 # stream
 
+stream 继承了 EventEmitter 类
+
+## 流的类型
+
+NodeJS 中有四种流的类型：
+- `Writable` - 可写入数据的流（如：`fs.createWritableStream()`）
+- `Readable` - 可读取数据的流（如：`fs.createReadableStream()`）
+- `Duplex` - 可读又可写的流（如：`net.Socket()`）
+- `Transform` - 在读写过程中可以修改或转换数据的`Duplex`流（如：`zlib.createDeflate())`）
+
+### 对象模式
+
+TODO
+
+### 缓冲
+
+TODO
 
 ## API for stream consumers
 
