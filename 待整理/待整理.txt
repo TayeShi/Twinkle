@@ -1,0 +1,158 @@
+待整理
+
+BFC
+
+常见定位方案：（用于控制元素的布局）
+
+普通流（normal flow）
+
+浮动（float）
+
+绝对定位（absolute positioning）
+
+
+Formatting context （格式化上下文）
+它是页面中的一块渲染区域，并且有一套渲染规则，它决定了其子元素将如何定位，以及和其他元素的关系和相互作用。
+
+Block Formatting Contexts（块级格式化上下文）
+是一个普通流。
+具有 BFC 特性的元素可以看作是隔离了的独立容器，容器里面的元素不会在布局上影响到外面的元素，并且 BFC 具有普通容器所没有的一些特性。
+
+
+触发 BFC 的条件
+
+元素满足以下任一一条即可：
+body 根元素 ???
+浮动元素：float 除 none 以外的值 ???
+绝对定位元素：position (absolute、fixed)
+display 为 inline-block、table-cells、flex
+overflow 除了 visible 以外的值 (hidden、auto、scroll)
+
+
+BFC 布局规则
+
+内部的box会在垂直方向，一个接一个的排列
+处于同一个BFC中的元素相互影响，可能会发生 margin collapse
+内部的每个box的 margin box 的左边，与包含块 border box 的左边相接触（对于从左往右的格式化，否则相反）。即使存在浮动也是如此。
+浮动盒区域不叠加到BFC上
+BFC 在页面上是一个隔离的独立容器，容器里面的子元素不会影响到外面的元素。反过来也是如此。
+计算 BFC 的高度时，考虑BFC所包含的所有元素，内部浮动元素也参与计算。
+
+r1 r2 r3
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    #box1 {
+        width: 50px;
+        height: 50px;
+        margin: 50px;
+        background-color: aqua;
+    }
+    #box2 {
+        width: 100px;
+        height: 100px;
+        margin: 50px;
+        background-color: aquamarine;
+    }
+</style>
+<body>
+    <div id="box1"></div>
+    <div id="box2"></div>
+</body>
+
+photo bfc_p1
+
+
+r3
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    #box1 {
+        width: 50px;
+        height: 50px;
+        float: left;
+        background-color: aqua;
+    }
+    #box2 {
+        width: 100px;
+        height: 100px;
+        background-color: aquamarine;
+        overflow: hidden;
+    }
+</style>
+
+photo bfc_p2
+
+
+r4
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    #box1 {
+        width: 50px;
+        height: 50px;
+        float: left;
+        background-color: aqua;
+    }
+    #box2 {
+        width: 100px;
+        height: 100px;
+        background-color: aquamarine;
+        overflow: hidden;
+    }
+</style>
+
+photo bfc_p3
+
+
+不给父节点设置高度 ，子节点设置浮动的时候，父节点会发生高度塌陷。
+
+<style>
+    .box {
+        border: 5px solid red;
+        width: 300px;
+    }
+    .child {
+        border: 5px solid yellow;
+        width:100px;
+        height: 100px;
+        float: left;
+    }
+</style>
+<body>
+    <div class="box">
+        <div class="child"></div>
+        <div class="child"></div>
+    </div>
+</body>
+
+photo bfc_p4
+
+根据 r6 ，可以解决。
+
+<style>
+    .box {
+        border: 5px solid red;
+        width: 300px;
+        overflow: hidden;
+    }
+    .child {
+        border: 5px solid yellow;
+        width:100px;
+        height: 100px;
+        float: left;
+    }
+</style>
+
+photo bfc_p5
+
+
+TODO 
+
+margin的问题
