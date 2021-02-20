@@ -44,20 +44,6 @@ export default defineComponent({
 >   3. 返回的方法会合并到methods方法中
 >   4. 如果有重名，setup中的优先
 
-## temp
-
-使用和不使用 vue-class-component
-
-组合式API
-setup
-1. 在组件创建之前调用。比created还早。所以只执行一次。
-2. 由于1原因，所以this不可调用。
-3. setup返回的所有内容都将暴露给组件的其他部分。 
-  1. return {} 返回的是一个对象，可以直接在模板中使用其中的属性和方法。
-  2. 返回对象的属性会合并到组件的data中
-  3. 返回的方法会合并到methods方法中
-  4. 如果有重名，setup中的优先
-
 ```typescript
 import { defineComponent } from 'vue'
 
@@ -109,11 +95,20 @@ export default defineComponent({
 })
 ```
 
+
+
+## temp
+
+使用和不使用 vue-class-component
+
 ref
 reactive
 vue2和vue3响应式的区别 Object.defineProperty  Proxy和Reflect
 在setup中加入生命周期hook
 
+计算属性和监视
+
+Vue2 和 vue3 的生命周期对比，以及vue3新增的hook
 
 view的生命周期
 组件的生命周期
